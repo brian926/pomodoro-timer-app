@@ -1,14 +1,12 @@
-import { sql, and, gte, lt } from 'drizzle-orm'
+import { sql, and, gte, lt, eq } from 'drizzle-orm'
 import { db } from '../db/client.js'
 import { workSessions, breakSessions } from '../db/schema.js'
 import type { DailyStats } from '@pomo-timer/shared'
 
 function dayBounds(dateStr: string, timezone: string): { start: Date; end: Date } {
-  // Build ISO strings for start and end of day in the given timezone
   const start = new Date(`${dateStr}T00:00:00`)
   const end = new Date(`${dateStr}T23:59:59.999`)
 
-  // If timezone is provided and not UTC, use Intl to get the offset
   if (timezone && timezone !== 'UTC') {
     try {
       const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -27,7 +25,7 @@ function dayBounds(dateStr: string, timezone: string): { start: Date; end: Date 
           '$3-$1-$2T$4:$5:$6',
         ),
       )
-      void startLocal // timezone-aware parsing is complex; use UTC approximation for now
+      void startLocal
     } catch {
       // fall through to UTC
     }
@@ -36,7 +34,11 @@ function dayBounds(dateStr: string, timezone: string): { start: Date; end: Date 
   return { start, end }
 }
 
-export async function getDailyStats(date: string, timezone = 'UTC'): Promise<DailyStats> {
+export async function getDailyStats(
+  date: string,
+  userId: string,
+  timezone = 'UTC',
+): Promise<DailyStats> {
   const { start, end } = dayBounds(date, timezone)
 
   const workResult = await db
@@ -47,6 +49,7 @@ export async function getDailyStats(date: string, timezone = 'UTC'): Promise<Dai
     .from(workSessions)
     .where(
       and(
+        eq(workSessions.userId, userId),
         gte(workSessions.startedAt, start),
         lt(workSessions.startedAt, end),
       ),
@@ -57,7 +60,13 @@ export async function getDailyStats(date: string, timezone = 'UTC'): Promise<Dai
       totalBreakMs: sql<number>`coalesce(sum(${breakSessions.consumedMs}), 0)`,
     })
     .from(breakSessions)
-    .where(and(gte(breakSessions.startedAt, start), lt(breakSessions.startedAt, end)))
+    .where(
+      and(
+        eq(breakSessions.userId, userId),
+        gte(breakSessions.startedAt, start),
+        lt(breakSessions.startedAt, end),
+      ),
+    )
 
   return {
     date,

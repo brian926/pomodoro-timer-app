@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '../db/client.js'
 import { breakSessions, workSessions, type BreakSessionRow } from '../db/schema.js'
 import type { BreakSession } from '@pomo-timer/shared'
@@ -16,11 +16,14 @@ function toResponse(row: BreakSessionRow): BreakSession {
   }
 }
 
-export async function createBreakSession(workSessionId: string): Promise<BreakSession> {
+export async function createBreakSession(
+  workSessionId: string,
+  userId: string,
+): Promise<BreakSession> {
   const [workSession] = await db
     .select()
     .from(workSessions)
-    .where(eq(workSessions.id, workSessionId))
+    .where(and(eq(workSessions.id, workSessionId), eq(workSessions.userId, userId)))
     .limit(1)
 
   if (!workSession) {
@@ -49,6 +52,7 @@ export async function createBreakSession(workSessionId: string): Promise<BreakSe
   const [row] = await db
     .insert(breakSessions)
     .values({
+      userId,
       workSessionId,
       initialBankMs: workSession.breakBankMs,
       startedAt: new Date(),
@@ -60,13 +64,14 @@ export async function createBreakSession(workSessionId: string): Promise<BreakSe
 
 export async function updateBreakSession(
   id: string,
+  userId: string,
   action: 'pause' | 'resume' | 'stop' | 'complete',
   consumedMs: number,
 ): Promise<BreakSession> {
   const [existing] = await db
     .select()
     .from(breakSessions)
-    .where(eq(breakSessions.id, id))
+    .where(and(eq(breakSessions.id, id), eq(breakSessions.userId, userId)))
     .limit(1)
   if (!existing) throw Object.assign(new Error('Break session not found'), { statusCode: 404 })
 
@@ -102,7 +107,7 @@ export async function updateBreakSession(
   const [updated] = await db
     .update(breakSessions)
     .set(updates)
-    .where(eq(breakSessions.id, id))
+    .where(and(eq(breakSessions.id, id), eq(breakSessions.userId, userId)))
     .returning()
 
   return toResponse(updated)

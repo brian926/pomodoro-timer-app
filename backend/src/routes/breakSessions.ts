@@ -1,5 +1,6 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import { requireAuth } from '../middleware/requireAuth.js'
 import * as service from '../services/breakSessionService.js'
 
 const BreakSessionSchema = Type.Object({
@@ -21,9 +22,11 @@ export const breakSessionsRoutes: FastifyPluginAsyncTypebox = async (fastify) =>
         body: Type.Object({ workSessionId: Type.String() }),
         response: { 201: BreakSessionSchema },
       },
+      preHandler: requireAuth,
     },
     async (req, reply) => {
-      const session = await service.createBreakSession(req.body.workSessionId)
+      const userId = req.session.get('userId')!
+      const session = await service.createBreakSession(req.body.workSessionId, userId)
       return reply.status(201).send(session)
     },
   )
@@ -44,10 +47,13 @@ export const breakSessionsRoutes: FastifyPluginAsyncTypebox = async (fastify) =>
         }),
         response: { 200: BreakSessionSchema },
       },
+      preHandler: requireAuth,
     },
     async (req, reply) => {
+      const userId = req.session.get('userId')!
       const session = await service.updateBreakSession(
         req.params.id,
+        userId,
         req.body.action,
         req.body.consumedMs,
       )
@@ -55,8 +61,8 @@ export const breakSessionsRoutes: FastifyPluginAsyncTypebox = async (fastify) =>
     },
   )
 
-  fastify.setErrorHandler(async (error, _req, reply) => {
-    const statusCode = (error as { statusCode?: number }).statusCode ?? 500
+  fastify.setErrorHandler(async (error: Error & { statusCode?: number }, _req, reply) => {
+    const statusCode = error.statusCode ?? 500
     return reply.status(statusCode).send({
       statusCode,
       error: 'Error',
