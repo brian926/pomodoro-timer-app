@@ -1,0 +1,7 @@
+packages:
+  - 'frontend'
+  - 'backend'
+  - 'shared'
+allowBuilds:
+  es5-ext: true
+  esbuild: true

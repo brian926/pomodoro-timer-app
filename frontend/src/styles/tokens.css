@@ -1,0 +1,49 @@
+/* Design tokens — single source of truth for all colors and spacing */
+
+:root {
+  /* Work mode — dark crimson with hot red accents */
+  --color-work-bg: #1a0a0a;
+  --color-work-card: rgba(220, 50, 50, 0.12);
+  --color-work-accent: #ff4040;
+
+  /* Break mode — deep navy with cool blue accents */
+  --color-break-bg: #060d1a;
+  --color-break-card: rgba(40, 120, 220, 0.12);
+  --color-break-accent: #4da6ff;
+
+  /* Neutral surface */
+  --color-surface: rgba(255, 255, 255, 0.06);
+
+  /* Typography */
+  --font-timer: 'ui-monospace', 'SFMono-Regular', 'Menlo', monospace;
+}
+
+/* Interactive state utilities */
+.btn-primary {
+  @apply px-8 py-3 rounded-full bg-white/20 text-white font-semibold tracking-widest uppercase
+    hover:bg-white/30 active:scale-95
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+    disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
+    transition-all duration-150;
+}
+
+.btn-secondary {
+  @apply px-6 py-2 rounded-full text-white/80 text-sm font-medium
+    hover:bg-white/10 active:scale-95
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white
+    disabled:opacity-40 disabled:cursor-not-allowed
+    transition-all duration-150;
+}
+
+/* Visually hidden (for screen readers) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
