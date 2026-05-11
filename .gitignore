@@ -40,5 +40,8 @@ test-results/
 # Vite
 .vite/
 
-# Local Claude Code settings
-.claude/settings.local.json
+# AI tooling
+.claude/
+.specify/
+specs/
+CLAUDE.md
