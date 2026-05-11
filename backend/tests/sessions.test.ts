@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 // Unit tests for break bank calculation (backend duplicate)
 // Integration tests against real DB require the Docker container.

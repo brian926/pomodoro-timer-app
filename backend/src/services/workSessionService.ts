@@ -39,11 +39,16 @@ function toResponse(row: WorkSessionRow): WorkSession {
   }
 }
 
-export async function createSession(): Promise<WorkSession> {
+export async function createSession(userId: string): Promise<WorkSession> {
   const existing = await db
     .select()
     .from(workSessions)
-    .where(inArray(workSessions.status, ['running', 'paused']))
+    .where(
+      and(
+        eq(workSessions.userId, userId),
+        inArray(workSessions.status, ['running', 'paused']),
+      ),
+    )
     .limit(1)
 
   if (existing.length > 0) {
@@ -52,25 +57,34 @@ export async function createSession(): Promise<WorkSession> {
 
   const [row] = await db
     .insert(workSessions)
-    .values({ startedAt: new Date() })
+    .values({ userId, startedAt: new Date() })
     .returning()
 
   return toResponse(row)
 }
 
-export async function getSession(id: string): Promise<WorkSession> {
-  const [row] = await db.select().from(workSessions).where(eq(workSessions.id, id)).limit(1)
+export async function getSession(id: string, userId: string): Promise<WorkSession> {
+  const [row] = await db
+    .select()
+    .from(workSessions)
+    .where(and(eq(workSessions.id, id), eq(workSessions.userId, userId)))
+    .limit(1)
   if (!row) throw Object.assign(new Error('Session not found'), { statusCode: 404 })
   return toResponse(row)
 }
 
 export async function updateSession(
   id: string,
+  userId: string,
   action: 'pause' | 'resume' | 'stop',
   durationMs: number,
   pausedDurationMs: number,
 ): Promise<WorkSession> {
-  const [existing] = await db.select().from(workSessions).where(eq(workSessions.id, id)).limit(1)
+  const [existing] = await db
+    .select()
+    .from(workSessions)
+    .where(and(eq(workSessions.id, id), eq(workSessions.userId, userId)))
+    .limit(1)
   if (!existing) throw Object.assign(new Error('Session not found'), { statusCode: 404 })
 
   const validTransitions: Record<string, string[]> = {
@@ -97,7 +111,7 @@ export async function updateSession(
   const [updated] = await db
     .update(workSessions)
     .set(updates)
-    .where(and(eq(workSessions.id, id)))
+    .where(and(eq(workSessions.id, id), eq(workSessions.userId, userId)))
     .returning()
 
   return toResponse(updated)

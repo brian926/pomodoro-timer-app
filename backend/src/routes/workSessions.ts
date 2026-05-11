@@ -1,5 +1,6 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import { requireAuth } from '../middleware/requireAuth.js'
 import * as service from '../services/workSessionService.js'
 
 const WorkSessionSchema = Type.Object({
@@ -16,9 +17,10 @@ const WorkSessionSchema = Type.Object({
 export const workSessionsRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     '/',
-    { schema: { response: { 201: WorkSessionSchema } } },
-    async (_req, reply) => {
-      const session = await service.createSession()
+    { schema: { response: { 201: WorkSessionSchema } }, preHandler: requireAuth },
+    async (req, reply) => {
+      const userId = req.session.get('userId')!
+      const session = await service.createSession(userId)
       return reply.status(201).send(session)
     },
   )
@@ -30,9 +32,11 @@ export const workSessionsRoutes: FastifyPluginAsyncTypebox = async (fastify) => 
         params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
         response: { 200: WorkSessionSchema },
       },
+      preHandler: requireAuth,
     },
     async (req, reply) => {
-      const session = await service.getSession(req.params.id)
+      const userId = req.session.get('userId')!
+      const session = await service.getSession(req.params.id, userId)
       return reply.send(session)
     },
   )
@@ -53,20 +57,21 @@ export const workSessionsRoutes: FastifyPluginAsyncTypebox = async (fastify) => 
         }),
         response: { 200: WorkSessionSchema },
       },
+      preHandler: requireAuth,
     },
     async (req, reply) => {
+      const userId = req.session.get('userId')!
       const { action, durationMs, pausedDurationMs } = req.body
-      const session = await service.updateSession(req.params.id, action, durationMs, pausedDurationMs)
+      const session = await service.updateSession(req.params.id, userId, action, durationMs, pausedDurationMs)
       return reply.send(session)
     },
   )
 
-  // Handle service errors as HTTP responses
-  fastify.setErrorHandler(async (error, _req, reply) => {
-    const statusCode = (error as { statusCode?: number }).statusCode ?? 500
+  fastify.setErrorHandler(async (error: Error & { statusCode?: number }, _req, reply) => {
+    const statusCode = error.statusCode ?? 500
     return reply.status(statusCode).send({
       statusCode,
-      error: reply.statusCode === 409 ? 'Conflict' : 'Error',
+      error: statusCode === 409 ? 'Conflict' : 'Error',
       message: error.message,
     })
   })

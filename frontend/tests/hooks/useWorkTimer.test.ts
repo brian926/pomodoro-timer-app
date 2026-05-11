@@ -7,7 +7,7 @@ import { calculateBreakBank } from '../../src/utils/breakBank'
 const MIN = 60_000
 
 describe('work timer break bank logic', () => {
-  let nowSpy: ReturnType<typeof vi.spyOn>
+  let nowSpy: { mockRestore: () => void }
   let fakeNow = 0
 
   beforeEach(() => {

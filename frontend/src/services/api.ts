@@ -6,14 +6,20 @@ import type {
   UpdateBreakSessionBody,
   CreateBreakSessionBody,
 } from '@pomo-timer/shared'
+import { useAuthStore } from '../store/authStore'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001/api'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...init?.headers },
     ...init,
   })
+  if (res.status === 401) {
+    useAuthStore.getState().checkAuth()
+    throw new Error('Session expired. Please sign in again.')
+  }
   if (!res.ok) {
     const body = await res.text()
     throw new Error(`API ${res.status}: ${body}`)

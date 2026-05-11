@@ -4,13 +4,36 @@ import { TimerDisplay } from './components/TimerDisplay'
 import { TimerControls } from './components/TimerControls'
 import { BreakBank } from './components/BreakBank'
 import { DailyStats } from './components/DailyStats'
+import { UserAvatar } from './components/UserAvatar'
+import { LoginPage } from './pages/LoginPage'
 import { useWorkTimer } from './hooks/useWorkTimer'
 import { useBreakTimer } from './hooks/useBreakTimer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTimerStore } from './store/timerStore'
+import { useAuthStore } from './store/authStore'
 import { playChime } from './utils/audio'
 
 export default function App() {
+  const { user, isLoading, checkAuth } = useAuthStore()
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-work-bg)] flex items-center justify-center">
+        <div className="text-white/50 text-sm">Loading…</div>
+      </div>
+    )
+  }
+
+  if (!user) return <LoginPage />
+
+  return <TimerApp />
+}
+
+function TimerApp() {
   const mode = useTimerStore((s) => s.mode)
   const breakBankMs = useTimerStore((s) => s.breakBankMs)
 
@@ -74,9 +97,12 @@ const isBreaking = mode === 'break' || mode === 'paused-break'
     >
       <div className="w-full max-w-md">
         {/* Header */}
-        <h1 className="text-white text-center text-2xl font-bold tracking-wide mb-8 opacity-90">
-          Pomo Timer
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-white text-2xl font-bold tracking-wide opacity-90">
+            Pomo Timer
+          </h1>
+          <UserAvatar />
+        </div>
 
         {/* Timer card */}
         <div className="bg-[var(--color-surface)] rounded-2xl p-8 shadow-xl backdrop-blur-sm">

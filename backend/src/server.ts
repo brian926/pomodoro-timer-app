@@ -1,6 +1,8 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { registerAuth } from './plugins/auth.js'
+import { authRoutes } from './routes/auth.js'
 import { workSessionsRoutes } from './routes/workSessions.js'
 import { breakSessionsRoutes } from './routes/breakSessions.js'
 import { statsRoutes } from './routes/stats.js'
@@ -10,8 +12,12 @@ export async function buildServer() {
 
   await fastify.register(cors, {
     origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    credentials: true,
   })
 
+  await registerAuth(fastify)
+
+  fastify.register(authRoutes)
   fastify.register(workSessionsRoutes, { prefix: '/api/sessions/work' })
   fastify.register(breakSessionsRoutes, { prefix: '/api/sessions/break' })
   fastify.register(statsRoutes, { prefix: '/api/stats' })

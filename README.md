@@ -1,6 +1,6 @@
 # Pomodoro Timer App
 
-A web-based Pomodoro timer where you control all transitions manually. The Working timer counts up indefinitely — stopping it calculates your earned break time using a proportional rule. A dedicated Break countdown then consumes that banked time. Sessions and daily stats are persisted to a local PostgreSQL database.
+A web-based Pomodoro timer where you control all transitions manually. Sign in with your Google account — each user's work sessions, break sessions, and daily stats are stored and scoped to their account. The Work timer counts up indefinitely — stopping it calculates your earned break time using a proportional rule. A dedicated Break countdown then consumes that banked time.
 
 **Break bank formula:**
 - Every 25 min worked → +5 min break
@@ -14,7 +14,7 @@ UI is inspired by [pomofocus.io](https://pomofocus.io) — minimal, centered lay
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 18, Vite 5, Tailwind CSS, Zustand |
-| Backend | Fastify 4, Drizzle ORM |
+| Backend | Fastify 5, Drizzle ORM |
 | Database | PostgreSQL 15 (Docker) |
 | Language | TypeScript 5.4 (monorepo via pnpm) |
 
@@ -40,16 +40,21 @@ pnpm install
 
 ### 3. Configure environment variables
 
-Create `backend/.env`:
+Create `backend/.env` (see `backend/.env.example` for all keys):
 ```env
 DATABASE_URL=postgresql://pomo_user:pomo_pass@localhost:5432/pomo_timer
 PORT=3001
 NODE_ENV=development
-```
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:3001
 
-Create `frontend/.env`:
-```env
-VITE_API_BASE_URL=http://localhost:3001/api
+# Google OAuth — create credentials at console.cloud.google.com
+# Authorized redirect URI: http://localhost:3001/api/auth/google/callback
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+SESSION_SECRET=your-64-char-hex-string
 ```
 
 ### 4. Run database migrations

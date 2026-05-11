@@ -1,3 +1,10 @@
+export interface AuthUser {
+  id: string
+  email: string
+  displayName: string
+  pictureUrl: string | null
+}
+
 export type WorkStatus = 'running' | 'paused' | 'stopped'
 export type BreakStatus = 'running' | 'paused' | 'completed' | 'stopped_early'
 export type WorkAction = 'pause' | 'resume' | 'stop'
